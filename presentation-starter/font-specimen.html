@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Progit font specimen</title>
+    <style>
+        @font-face { font-family: 'ProgitSans';        src: url('assets/fonts/progitsans-regular.woff2') format('woff2'); }
+        @font-face { font-family: 'ProgitSans Mixed';  src: url('assets/fonts/progitsans-mixed.woff2')   format('woff2'); }
+        @font-face { font-family: 'ProgitSans Plants'; src: url('assets/fonts/progitsans-plants.woff2')  format('woff2'); }
+
+        body {
+            background: #fafafa;
+            color: #0d2026;
+            padding: 48px;
+            font-family: system-ui, sans-serif;
+            margin: 0;
+        }
+        section {
+            margin-bottom: 56px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        h3 {
+            font-family: system-ui;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #708783;
+            margin-bottom: 16px;
+        }
+        .sample-regular { font-family: 'ProgitSans'; }
+        .sample-mixed   { font-family: 'ProgitSans Mixed'; }
+        .sample-plants  { font-family: 'ProgitSans Plants'; }
+
+        .xl { font-size: 72px; font-weight: 800; line-height: 1.05; margin-bottom: 12px; }
+        .lg { font-size: 40px; font-weight: 700; margin-bottom: 8px; }
+        .md { font-size: 22px; font-weight: 500; margin-bottom: 8px; }
+        .alphabet { font-size: 32px; font-weight: 700; letter-spacing: 1px; }
+        .note { font-family: monospace; color: #708783; font-size: 13px; margin-top: 12px; }
+    </style>
+</head>
+<body>
+
+<h1 style="font-family: system-ui; font-weight: 800; margin-bottom: 40px;">Progit font specimen</h1>
+
+<section>
+    <h3>ProgitSans (Regular) &middot; 199 glyphs</h3>
+    <div class="xl sample-regular">Your topic goes here</div>
+    <div class="md sample-regular">A one-sentence description of what this talk is about.</div>
+    <div class="alphabet sample-regular">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>abcdefghijklmnopqrstuvwxyz<br>0123456789 &amp; ?! ,. &mdash;</div>
+    <p class="note">Workhorse. Has punctuation, accents, full Latin.</p>
+</section>
+
+<section>
+    <h3>ProgitSans Mixed &middot; 180 glyphs</h3>
+    <div class="xl sample-mixed">Your topic goes here</div>
+    <div class="md sample-mixed">A one-sentence description of what this talk is about.</div>
+    <div class="alphabet sample-mixed">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>abcdefghijklmnopqrstuvwxyz<br>0123456789 &amp; ?! ,. &mdash;</div>
+    <p class="note">Uppercase/lowercase come from different styles &mdash; visually distinctive.</p>
+</section>
+
+<section>
+    <h3>ProgitSans Plants &middot; 123 glyphs, no punctuation</h3>
+    <div class="xl sample-plants">Your topic goes here</div>
+    <div class="md sample-plants">A one-sentence description of what this talk is about.</div>
+    <div class="alphabet sample-plants">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>abcdefghijklmnopqrstuvwxyz<br>0123456789</div>
+    <p class="note">On progit.no this font is used as a decorative <code>::before</code> accent (list bullets, etc.), not for body text.</p>
+</section>
+
+</body>
+</html>

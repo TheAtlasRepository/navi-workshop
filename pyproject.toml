@@ -1,0 +1,25 @@
+[project]
+name = "navi-workshop"
+version = "0.1.0"
+description = "Workshop skeleton for building a Navi-style AI agent with Pydantic AI + Logfire"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic-ai>=0.0.14",
+    "logfire>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "rich>=13.0.0",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your topic — Presentation starter</title>
+    <style>
+        /* =============================================================
+           Progit presentation starter
+           Palette + typography from progit.no. Fonts are SIL OFL 1.1
+           (Tobias Wulvik, 2020) — see assets/fonts/OFL.txt for the full
+           license. Feel free to retheme.
+           ============================================================= */
+
+        @font-face {
+            font-family: 'ProgitSans';
+            src: url('assets/fonts/progitsans-regular.woff2') format('woff2');
+            font-weight: 400 800;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'ProgitSans Mixed';
+            src: url('assets/fonts/progitsans-mixed.woff2') format('woff2');
+            font-weight: 400 800;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'ProgitSans Plants';
+            src: url('assets/fonts/progitsans-plants.woff2') format('woff2');
+            font-weight: 400 800;
+            font-display: swap;
+        }
+
+        :root {
+            --color-primary-100: #f7fceb;
+            --color-primary-200: #ddecd3;
+            --color-primary-300: #afc3ae;
+            --color-primary-400: #708783;
+            --color-primary-500: #2f4949;
+            --color-primary-600: #1b3436;
+            --color-primary-700: #103031;
+            --color-primary-800: #0d2026;
+            --color-primary-900: #051119;
+
+            --accent-warm: #dd7655;    /* salmon, sparing */
+            --accent-hot:  #f99c00;    /* orange, sparing */
+
+            --bg: #fafafa;
+            --bg-soft: #f5f5f5;
+            --text: #0d2026;
+            --text-muted: #708783;
+            --border: #e5e5e5;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'ProgitSans', 'Assistant', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Slide container */
+        .slides-container { width: 100%; height: 100%; position: relative; }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s ease, transform 0.5s ease;
+            transform: translateX(32px);
+            overflow: hidden;
+        }
+        .slide.active { opacity: 1; visibility: visible; transform: translateX(0); }
+        .slide.prev   { transform: translateX(-32px); }
+
+        .slide-content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1120px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 60px;
+            font-weight: 800;
+            line-height: 1.08;
+            letter-spacing: -1.5px;
+            color: var(--text);
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 44px;
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -0.8px;
+            color: var(--text);
+            margin-bottom: 20px;
+        }
+        h3 {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.3;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+        p {
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+        .subtitle {
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--color-primary-500);
+            line-height: 1.5;
+        }
+
+        /* Logo slot */
+        .logo-slot {
+            font-family: 'ProgitSans Mixed', 'ProgitSans', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--color-primary-700);
+            letter-spacing: -0.5px;
+        }
+        .logo-slot .dot { color: var(--accent-warm); }
+
+        /* Footer */
+        .slide-footer {
+            position: absolute;
+            bottom: 28px;
+            left: 80px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        /* Bullets */
+        .bullets {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .bullets li {
+            font-size: 17px;
+            line-height: 1.55;
+            color: var(--text-muted);
+            padding-left: 26px;
+            position: relative;
+        }
+        .bullets li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            background: var(--color-primary-600);
+        }
+        .bullets li strong { color: var(--text); font-weight: 700; }
+
+        /* Badges */
+        .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--color-primary-200);
+            color: var(--color-primary-700);
+        }
+        .badge.warm { background: #fdece5; color: var(--accent-warm); }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .slide.active .animate-in { animation: fadeInUp 0.5s ease forwards; }
+        .slide.active .animate-in:nth-child(1) { animation-delay: 0.1s; }
+        .slide.active .animate-in:nth-child(2) { animation-delay: 0.2s; }
+        .slide.active .animate-in:nth-child(3) { animation-delay: 0.3s; }
+        .slide.active .animate-in:nth-child(4) { animation-delay: 0.4s; }
+        .slide.active .animate-in:nth-child(5) { animation-delay: 0.5s; }
+        .animate-in { opacity: 0; }
+
+        /* =============================================================
+           LAYOUT 1 — Title
+           ============================================================= */
+        .layout-title {
+            background: linear-gradient(135deg, var(--color-primary-100) 0%, var(--bg) 100%);
+        }
+        .layout-title .slide-content {
+            align-items: flex-start;
+            justify-content: center;
+            gap: 28px;
+        }
+        .layout-title h1 {
+            font-size: 72px;
+            max-width: 880px;
+            letter-spacing: -1px;
+        }
+
+        /* Emphasis utility — swap a word or phrase to Mixed for character.
+           Keep sparing. One emphasized word per title is the sweet spot. */
+        .mixed {
+            font-family: 'ProgitSans Mixed', 'ProgitSans', sans-serif;
+            font-style: normal;
+        }
+
+        /* =============================================================
+           LAYOUT 2 — Section divider (dark)
+           ============================================================= */
+        .layout-divider {
+            background: var(--color-primary-700);
+        }
+        .layout-divider .slide-content { align-items: flex-start; }
+        .layout-divider h1 {
+            color: var(--color-primary-100);
+            font-size: 64px;
+            letter-spacing: -0.5px;
+        }
+        .layout-divider .subtitle {
+            color: var(--color-primary-300);
+        }
+        .layout-divider .accent-bar {
+            width: 64px;
+            height: 4px;
+            background: var(--accent-warm);
+            border-radius: 2px;
+            margin-bottom: 24px;
+        }
+        .layout-divider .slide-footer { color: rgba(255,255,255,0.35); }
+
+        /* =============================================================
+           LAYOUT 3 — Two-column (text + visual)
+           ============================================================= */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 56px;
+            align-items: center;
+            width: 100%;
+        }
+        .col-text { display: flex; flex-direction: column; gap: 18px; }
+        .col-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-primary-200);
+            border-radius: 16px;
+            min-height: 380px;
+            overflow: hidden;
+            border: 1px solid var(--color-primary-300);
+        }
+        .col-visual img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .col-visual .placeholder {
+            padding: 40px;
+            text-align: center;
+            color: var(--color-primary-500);
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .col-visual .placeholder .big { font-size: 72px; display: block; margin-bottom: 12px; }
+
+        /* =============================================================
+           LAYOUT 4 — Big statement
+           ============================================================= */
+        .layout-statement {
+            background: var(--color-primary-100);
+        }
+        .layout-statement .slide-content {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .layout-statement .accent-bar {
+            width: 56px;
+            height: 4px;
+            background: var(--accent-warm);
+            border-radius: 2px;
+            margin-bottom: 28px;
+        }
+        .layout-statement h1 {
+            font-size: 52px;
+            max-width: 900px;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+        .layout-statement .subtitle {
+            max-width: 640px;
+            margin-top: 20px;
+        }
+
+        /* =============================================================
+           LAYOUT 5 — Card grid
+           ============================================================= */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            width: 100%;
+            margin-top: 24px;
+        }
+        .card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .card:hover {
+            border-color: var(--color-primary-400);
+            transform: translateY(-2px);
+        }
+        .card .card-num {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--color-primary-600);
+            line-height: 1;
+            letter-spacing: -1px;
+        }
+        .card h3 { font-size: 18px; margin-bottom: 0; }
+        .card p { font-size: 14px; line-height: 1.55; }
+
+        /* =============================================================
+           LAYOUT 6 — Comparison (side by side)
+           ============================================================= */
+        .compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .compare-col {
+            border-radius: 14px;
+            padding: 32px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .compare-col.a {
+            background: var(--bg-soft);
+            border: 1px solid var(--border);
+        }
+        .compare-col.b {
+            background: var(--color-primary-100);
+            border: 1px solid var(--color-primary-300);
+        }
+        .compare-col h3 { font-size: 20px; }
+        .check-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .check-list li {
+            font-size: 15px;
+            color: var(--text-muted);
+            padding-left: 28px;
+            position: relative;
+            line-height: 1.55;
+        }
+        .check-list li::before {
+            position: absolute;
+            left: 0;
+            top: 1px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .check-list.neutral li::before { content: '·'; color: var(--text-muted); font-size: 20px; top: -3px; }
+        .check-list.yes li::before     { content: '✓'; color: var(--color-primary-600); }
+
+        /* =============================================================
+           LAYOUT 7 — Summary / CTA
+           ============================================================= */
+        .layout-summary {
+            background: linear-gradient(135deg, var(--color-primary-100), var(--bg));
+        }
+        .layout-summary .slide-content {
+            align-items: center;
+            text-align: center;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            margin-top: 24px;
+        }
+        .summary-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 26px 22px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .summary-card .num {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--color-primary-600);
+            letter-spacing: -1px;
+        }
+        .summary-card h3 { font-size: 16px; margin-bottom: 0; }
+        .summary-card p { font-size: 14px; }
+
+        /* =============================================================
+           Code block (bonus — useful for technical talks)
+           ============================================================= */
+        pre.code {
+            background: var(--color-primary-800);
+            color: #e5e7eb;
+            border-radius: 12px;
+            padding: 22px 26px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            text-align: left;
+            box-shadow: 0 4px 24px rgba(13, 32, 38, 0.18);
+        }
+        pre.code .c  { color: #708783; }
+        pre.code .k  { color: #afc3ae; font-weight: 600; }
+        pre.code .s  { color: #dd7655; }
+
+        /* =============================================================
+           Navigation
+           ============================================================= */
+        .nav {
+            position: fixed;
+            bottom: 24px;
+            right: 32px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            z-index: 100;
+        }
+        .nav-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.15s;
+        }
+        .nav-btn:hover:not(:disabled) {
+            background: var(--color-primary-700);
+            color: white;
+            border-color: var(--color-primary-700);
+        }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .counter {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 48px;
+            text-align: center;
+        }
+
+        .progress {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: var(--color-primary-600);
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .slide { padding: 40px 48px; }
+            h1 { font-size: 40px; }
+            .layout-title h1 { font-size: 48px; }
+            h2 { font-size: 32px; }
+            .two-col, .compare, .card-grid, .summary-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Print */
+        @media print {
+            .slide {
+                position: relative;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                page-break-after: always;
+                height: 100vh;
+            }
+            .nav, .progress { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress" id="progress"></div>
+
+    <div class="slides-container" id="slides">
+
+        <!-- ==========================================
+             SLIDE 1 — Title
+             ========================================== -->
+        <div class="slide layout-title active" data-slide="1">
+            <div class="slide-content">
+                <div class="animate-in logo-slot">Your Logo<span class="dot">.</span></div>
+                <h1 class="animate-in">Your <span class="mixed">topic</span><br>goes here.</h1>
+                <p class="subtitle animate-in">A one-sentence description of what this talk is about. Keep it under 20 words — less is more.</p>
+                <div class="badges animate-in">
+                    <span class="badge">Workshop</span>
+                    <span class="badge warm">2026</span>
+                </div>
+            </div>
+            <div class="slide-footer">yourcompany.com</div>
+        </div>
+
+        <!-- ==========================================
+             SLIDE 2 — Section divider
+             ========================================== -->
+        <div class="slide layout-divider" data-slide="2">
+            <div class="slide-content">
+                <div class="accent-bar animate-in"></div>
+                <h1 class="animate-in">Part 1 &middot; <span class="mixed">The problem</span></h1>
+                <p class="subtitle animate-in">A brief description of the section you're entering.</p>
+            </div>
+            <div class="slide-footer">yourcompany.com</div>
+        </div>
+
+        <!-- ==========================================
+             SLIDE 3 — Two-column (text + visual)
+             ========================================== -->
+        <div class="slide" data-slide="3">
+            <div class="slide-content">
+                <div class="two-col">
+                    <div class="col-text">
+                        <h2 class="animate-in">What we're solving</h2>
+                        <p class="animate-in">A short paragraph framing the problem. One or two sentences. The reader should know why they're still listening after this slide.</p>
+                        <ul class="bullets animate-in">
+                            <li><strong>First point</strong> — a concrete detail, not an abstract goal</li>
+                            <li><strong>Second point</strong> — preferably with a number</li>
+                            <li><strong>Third point</strong> — something non-obvious</li>
+                        </ul>
+                        <div class="badges animate-in">
+                            <span class="badge">Category</span>
+                        </div>
+                    </div>
+                    <div class="col-visual animate-in">
+                        <img src="assets/images/workplace-wide.jpg" alt="">
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">yourcompany.com</div>
+        </div>
+
+        <!-- ==========================================
+             SLIDE 4 — Big statement
+             ========================================== -->
+        <div class="slide layout-statement" data-slide="4">
+            <div class="slide-content">
+                <div class="accent-bar animate-in"></div>
+                <h1 class="animate-in">The <span class="mixed">single most important</span> claim of your whole talk.</h1>
+                <p class="subtitle animate-in">Optional support. Often stronger without one.</p>
+            </div>
+            <div class="slide-footer">yourcompany.com</div>
+        </div>
+
+        <!-- ==========================================
+             SLIDE 5 — Card grid
+             ========================================== -->
+        <div class="slide" data-slide="5">
+            <div class="slide-content">
+                <h2 class="animate-in" style="text-align: center; margin-bottom: 8px;">Three (or six) things to remember</h2>
+                <p class="animate-in" style="text-align: center; max-width: 700px; margin: 0 auto;">One-line subhead. Or delete it.</p>
+                <div class="card-grid animate-in">
+                    <div class="card">
+                        <div class="card-num">01</div>
+                        <h3>First idea</h3>
+                        <p>A specific, concrete example. Not a generic slogan.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-num">02</div>
+                        <h3>Second idea</h3>
+                        <p>Include a number or a name if you can.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-num">03</div>
+                        <h3>Third idea</h3>
+                        <p>Something counter-intuitive beats something obvious.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">yourcompany.com</div>
+        </div>
+
+        <!-- ==========================================
+             SLIDE 6 — Comparison
+             ========================================== -->
+        <div class="slide" data-slide="6">
+            <div class="slide-content">
+                <h2 class="animate-in" style="text-align: center;">Old way vs. new way</h2>
+                <div class="compare animate-in">
+                    <div class="compare-col a">
+                        <h3>Before</h3>
+                        <ul class="check-list neutral">
+                            <li>One thing that was painful</li>
+                            <li>Another thing that was painful</li>
+                            <li>A third thing — the one that tipped you over</li>
+                        </ul>
+                    </div>
+                    <div class="compare-col b">
+                        <h3>After</h3>
+                        <ul class="check-list yes">
+                            <li>What changed</li>
+                            <li>The number that proves it</li>
+                            <li>The ergonomic benefit</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">yourcompany.com</div>
+        </div>
+
+        <!-- ==========================================
+             SLIDE 7 — Code block (bonus layout)
+             ========================================== -->
+        <div class="slide" data-slide="7">
+            <div class="slide-content">
+                <h2 class="animate-in" style="margin-bottom: 10px;">Or show some code</h2>
+                <p class="animate-in" style="margin-bottom: 20px;">Dark code blocks work well on the light background.</p>
+<pre class="code animate-in"><span class="c"># A tiny example</span>
+<span class="k">def</span> <span class="k">greet</span>(name: <span class="k">str</span>) -&gt; <span class="k">str</span>:
+    <span class="k">return</span> <span class="s">f"hello, {name}"</span>
+
+<span class="k">print</span>(greet(<span class="s">"world"</span>))</pre>
+            </div>
+            <div class="slide-footer">yourcompany.com</div>
+        </div>
+
+        <!-- ==========================================
+             SLIDE 8 — Summary / CTA
+             ========================================== -->
+        <div class="slide layout-summary" data-slide="8">
+            <div class="slide-content">
+                <h2 class="animate-in">What to do next</h2>
+                <p class="subtitle animate-in" style="max-width: 680px; margin: 0 auto 24px;">Close with action, not summary.</p>
+                <div class="summary-grid animate-in">
+                    <div class="summary-card">
+                        <div class="num">01</div>
+                        <h3>First action</h3>
+                        <p>Something concrete someone can do Monday.</p>
+                    </div>
+                    <div class="summary-card">
+                        <div class="num">02</div>
+                        <h3>Second action</h3>
+                        <p>Something slightly harder but more rewarding.</p>
+                    </div>
+                    <div class="summary-card">
+                        <div class="num">03</div>
+                        <h3>Third action</h3>
+                        <p>Where to find you after the talk.</p>
+                    </div>
+                </div>
+                <div class="animate-in" style="margin-top: 40px;">
+                    <div class="logo-slot">Your Logo<span class="dot">.</span></div>
+                    <p style="margin-top: 8px; font-size: 14px;">yourcompany.com</p>
+                </div>
+            </div>
+            <div class="slide-footer">yourcompany.com</div>
+        </div>
+
+    </div>
+
+    <div class="nav">
+        <button class="nav-btn" id="prev" onclick="prevSlide()" disabled>←</button>
+        <span class="counter" id="counter">1 / 8</span>
+        <button class="nav-btn" id="next" onclick="nextSlide()">→</button>
+    </div>
+
+    <script>
+        let current = 1;
+        const total = document.querySelectorAll('.slide').length;
+
+        function show(n) {
+            document.querySelectorAll('.slide').forEach(slide => {
+                const num = parseInt(slide.dataset.slide);
+                slide.classList.remove('active', 'prev');
+                if (num === n) slide.classList.add('active');
+                else if (num < n) slide.classList.add('prev');
+            });
+            current = n;
+            document.getElementById('counter').textContent = `${n} / ${total}`;
+            document.getElementById('prev').disabled = n === 1;
+            document.getElementById('next').disabled = n === total;
+            document.getElementById('progress').style.width = `${((n - 1) / (total - 1)) * 100}%`;
+        }
+        function nextSlide() { if (current < total) show(current + 1); }
+        function prevSlide() { if (current > 1) show(current - 1); }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        });
+
+        show(1);
+    </script>
+</body>
+</html>
