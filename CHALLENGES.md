@@ -216,3 +216,116 @@ the agents do the work. The bottleneck becomes review, not code.
 
 ✓ **Done when**: three branches merged back into main, all evals green on
 the merged result.
+
+---
+
+## 8. Stretch: real data via Overpass (45 min)
+
+All the tools so far are mocks. Real Navi hits Overture Maps via DuckDB
+— too heavy for a workshop. But **Overpass** is the lightweight cousin:
+the OpenStreetMap query API, free, no auth, returns JSON.
+
+Write a new tool `find_places_nearby(category: str, city: str, radius_m: int = 1000)`
+that hits Overpass and returns real OSM places. Register it, ask
+*"find cafes in Oslo"*, and see real data come back.
+
+**What you're learning:** async HTTP in a tool, result trimming so you
+don't blow the context, error handling that the agent can actually recover
+from, and what a production tool body looks like.
+
+✓ **Done when**: the agent answers *"find cafes in Oslo"* with real cafe
+names (you can verify them on openstreetmap.org), and the tool returns
+at most 15 results so the agent's context doesn't explode.
+
+<details>
+<summary>💡 Hint — Overpass query shape</summary>
+
+Overpass QL is its own language, but the query for "cafes near a lat/lon"
+is short:
+
+```
+[out:json][timeout:15];
+(
+  node["amenity"="cafe"](around:1000,59.9139,10.7522);
+);
+out center 15;
+```
+
+You POST that string (as form data `data=...` or as the raw body) to
+`https://overpass-api.de/api/interpreter`. Response shape:
+
+```json
+{"elements": [{"type": "node", "id": 123, "lat": 59.9, "lon": 10.7,
+               "tags": {"name": "Tim Wendelboe", "amenity": "cafe"}}, ...]}
+```
+
+Iterate `elements`, pull `tags.name`, return a list of dicts.
+</details>
+
+<details>
+<summary>💡 Hint — turning "Oslo" into lat/lon</summary>
+
+Two options, in order of effort:
+
+1. **Hardcode a few cities** for the workshop. Oslo is 59.9139, 10.7522;
+   Bergen is 60.3939, 5.3290. A dict lookup is fine for demo purposes.
+2. **Real geocoding**: hit Nominatim
+   (`https://nominatim.openstreetmap.org/search?q=Oslo&format=json&limit=1`).
+   Respect their usage policy — set a real `User-Agent` header.
+
+Option 1 is the right teaching choice. The point of the challenge is
+**real data from a real API**, not building a geocoder.
+</details>
+
+<details>
+<summary>💡 Hint — async HTTP with httpx</summary>
+
+`httpx` is already in the deps. Pattern:
+
+```python
+import httpx
+
+OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+
+async def find_places_nearby(
+    category: str, city: str, radius_m: int = 1000
+) -> list[dict]:
+    lat, lon = _CITY_COORDS.get(city.lower(), (None, None))
+    if lat is None:
+        return []  # or raise — see below
+
+    query = f"""
+    [out:json][timeout:15];
+    (
+      node["amenity"="{category}"](around:{radius_m},{lat},{lon});
+    );
+    out center 15;
+    """
+    async with httpx.AsyncClient(timeout=20) as client:
+        r = await client.post(OVERPASS_URL, data={"data": query})
+        r.raise_for_status()
+        data = r.json()
+
+    return [
+        {"name": e["tags"].get("name", "unnamed"),
+         "lat": e["lat"], "lon": e["lon"]}
+        for e in data.get("elements", [])
+    ][:15]
+```
+
+Register on the agent with `@agent.tool_plain` (async is fine,
+pydantic-ai awaits tools automatically).
+</details>
+
+<details>
+<summary>💡 Hint — be nice to the free API</summary>
+
+Overpass is free but rate-limited. For a workshop you're fine, but:
+
+- Set a timeout (`[out:json][timeout:15]` + `httpx` timeout).
+- Send one request per turn, not a loop.
+- If you get a 429 or a 504, let the tool raise — the agent's retry
+  budget will handle it. Don't add a retry loop inside the tool; that's
+  what `@agent.tool(retries=2)` is for.
+- Set `User-Agent: navi-workshop/1.0` as a courtesy header.
+</details>
