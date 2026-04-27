@@ -9,7 +9,66 @@ Click the 💡 **Hint** blocks if you get stuck.
 
 ---
 
-## 1. Add a tool
+## 1. Fix the system prompt
+
+Run `uv run python eval.py`. **0/7** — every case fails. Open `agent.py` and
+you'll see why:
+
+```python
+SYSTEM_PROMPT = "Always respond with: 'Hello World'"
+```
+
+The model literally answers *"Hello World"* to everything. Open one of the
+failing cases in Logfire — depending on the case the model either ignores
+the tools entirely or calls one and then still says "Hello World".
+
+Rewrite `SYSTEM_PROMPT` with concrete rules. The shape of a good prompt
+for a tool-using agent:
+
+- A crisp role + scope (*"you are a GIS assistant; you answer questions
+  about places, weather, and demographics"*).
+- A *prefer tools* rule (*"prefer tools over guessing — if a user asks
+  about a place's weather, call get_weather"*).
+- A chaining rule (*"chain tools when needed — 'schools near rainy areas
+  in Bergen' = search_places + get_weather"*).
+- A short-answers rule.
+- An honesty rule for empty tool returns.
+
+Rerun the eval. You should jump from **0/7 → 5/7**. The two remaining
+failures are the elevation cases — they need a tool that doesn't exist
+yet (Challenge 2).
+
+**What you're learning:** prompts are code. The shape of a good prompt
+is: crisp role, small set of rules, explicit chaining when needed. The
+eval suite is what tells you whether your edit helped or hurt — vibes
+aren't enough.
+
+✓ **Done when**: eval goes **0/7 → 5/7**. The two elevation cases stay
+red and become Challenge 2 + 3's job.
+
+<details>
+<summary>💡 Hint — a prompt that gets you to 5/7</summary>
+
+```python
+SYSTEM_PROMPT = """You are Mini-Navi, a GIS assistant.
+
+You help users answer spatial questions about places, weather, and demographics.
+
+Rules:
+- Prefer tools over guessing. If a user asks about a place's weather, call get_weather.
+- Chain tools when needed. "Schools near rainy areas in Bergen" = search_places + get_weather.
+- Keep answers short. One or two sentences unless the user asks for detail.
+- If a tool returns nothing useful, say so plainly. Don't hallucinate data.
+"""
+```
+
+This is a starting point — write your own variant, run the eval, see what
+sticks.
+</details>
+
+---
+
+## 2. Add a tool
 
 Add a `get_elevation` tool that returns a mock elevation in meters. Follow
 the pattern in `tools/weather.py`:
@@ -38,13 +97,13 @@ you return a model, it goes back as JSON, the model answers.
 
 ✓ **Done when**: the app answers the Everest question with a number,
 Logfire shows a `get_elevation` span in the trace, and the eval has gone
-from **5/7 → 6/7** (the chain case still fails — that's Challenge 2).
+from **5/7 → 6/7** (the chain case still fails — that's Challenge 3).
 
 ---
 
-## 2. Fix the system prompt
+## 3. Tighten the system prompt
 
-After Challenge 1 the eval should be **6/7**, with `chain_landmark_elevation`
+After Challenge 2 the eval should be **6/7**, with `chain_landmark_elevation`
 still failing. Open the Logfire trace on that case and look at what the
 model actually did.
 
@@ -79,13 +138,13 @@ called `search_places` first.
 > Most red-baseline failures at this scale come from *missing structural
 > guidance* (chaining, grounding) rather than *missing rules of thumb*.
 > Your prompt rule for this case earns its keep because it teaches a
-> sequence, not a preference. Hold this in mind when you write Challenge 5
+> sequence, not a preference. Hold this in mind when you write Challenge 6
 > later — *the case you write* is what catches the next bug, not the
 > prompt that fixed this one.
 
 ---
 
-## 3. Convert `agent.py` to dynamic tool opening
+## 4. Convert `agent.py` to dynamic tool opening
 
 Right now every tool's JSON schema is in the request on every turn, whether
 the model uses it or not. With four tiny tools that's nothing — but Navi has
@@ -98,7 +157,7 @@ available, opens the tool it wants, then calls it. The pre-shipped tools
 prompt files at `prompts/<tool>/{minimized,maximized}.md` — you just need
 to wire them up.
 
-**Write prompts for any tool you added in Challenge 1.** Your `get_elevation`
+**Write prompts for any tool you added in Challenge 2.** Your `get_elevation`
 tool needs `prompts/get_elevation/minimized.md` (one-line teaser the model
 sees in the system menu) and `prompts/get_elevation/maximized.md` (the full
 manual that gets swapped in once the tool is opened). Copy
@@ -326,7 +385,7 @@ if __name__ == "__main__":
 
 ---
 
-## 4. Sub-agent for a sub-domain
+## 5. Sub-agent for a sub-domain
 
 `examples/subagent.py` has an orchestrator + a spatial-analysis specialist.
 First, run it to see the current shape:
@@ -383,7 +442,7 @@ specialist. The routing rule is the whole point — make it explicit.
 
 ---
 
-## 5. Write a real eval case
+## 6. Write a real eval case
 
 Add a case to `eval.py` that the current agent **fails**. Confirm the eval
 catches it. Now fix the prompt or a tool until it passes — without breaking
@@ -438,7 +497,7 @@ one answer is 'obvious'."*
 
 ---
 
-## 6. LLM-as-judge (optional)
+## 7. LLM-as-judge (optional)
 
 Add a judge function at the bottom of `eval.py`. For one case, instead of a
 substring check, call a small LLM with a rubric and ask it to score the
@@ -482,7 +541,7 @@ the variance *is* the lesson.
 
 ---
 
-## 7. Stretch: real data via Overpass
+## 8. Stretch: real data via Overpass
 
 All the tools so far are mocks. Real Navi hits Overture Maps via DuckDB
 — too heavy for a workshop. But **Overpass** is the lightweight cousin:
