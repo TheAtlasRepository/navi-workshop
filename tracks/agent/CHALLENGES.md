@@ -138,7 +138,7 @@ called `search_places` first.
 > Most red-baseline failures at this scale come from *missing structural
 > guidance* (chaining, grounding) rather than *missing rules of thumb*.
 > Your prompt rule for this case earns its keep because it teaches a
-> sequence, not a preference. Hold this in mind when you write Challenge 7
+> sequence, not a preference. Hold this in mind when you write Challenge 8
 > later — *the case you write* is what catches the next bug, not the
 > prompt that fixed this one.
 
@@ -529,7 +529,105 @@ if __name__ == "__main__":
 
 ---
 
-## 6. Sub-agent for a sub-domain
+## 6. Refresh the prompt per turn (the Navi pattern)
+
+Open the Logfire trace from your last run. Find the **second** `chat
+gpt-4o-mini` span (after the model called `open_tool("get_weather")`).
+Click into the messages — and you'll notice the system prompt **still**
+lists `get_weather` in the closed-tools menu, even though the model
+already opened it on turn 1.
+
+That's because `@agent.system_prompt` runs **once per `agent.run()`**,
+not before each model turn. `prepare_tools` correctly drops the schema
+for closed tools each turn, but the menu in the prompt is stale within
+a run.
+
+Navi avoids this with `history_processors` — a hook pydantic-ai runs
+**before every model call**, with the message list as input and output.
+Use it to rewrite the system prompt fresh each turn.
+
+### The fix
+
+Add this to `agent.py`:
+
+```python
+from dataclasses import replace as dc_replace
+
+from pydantic_ai.messages import ModelMessage, ModelRequest, SystemPromptPart
+
+
+async def refresh_menu(
+    ctx: RunContext[Deps],
+    messages: list[ModelMessage],
+) -> list[ModelMessage]:
+    """Rewrite the system prompt before every model call.
+
+    Strips any old "Available tools" block and rebuilds it from the
+    current `opened_tools` set."""
+    closed = sorted(TOOL_NAMES - ctx.deps.opened_tools)
+    if closed:
+        lines = [f"- **{n}** — {_load_md(n, 'minimized')}" for n in closed]
+        menu = "\n\nAvailable tools (call `open_tool(name)` to open):\n" + "\n".join(lines)
+    else:
+        menu = ""
+
+    out = []
+    replaced = False
+    for msg in messages:
+        if isinstance(msg, ModelRequest) and not replaced:
+            new_parts = []
+            for part in msg.parts:
+                if isinstance(part, SystemPromptPart) and not replaced:
+                    base = part.content.split("\n\nAvailable tools")[0].rstrip()
+                    new_parts.append(dc_replace(part, content=base + menu))
+                    replaced = True
+                else:
+                    new_parts.append(part)
+            out.append(dc_replace(msg, parts=new_parts))
+        else:
+            out.append(msg)
+    return out
+```
+
+Wire it into the `Agent` constructor and **remove the old
+`@agent.system_prompt` menu function** (you don't need both):
+
+```python
+agent = Agent(
+    MODEL,
+    deps_type=Deps,
+    system_prompt=SYSTEM_PROMPT,            # static base only
+    prepare_tools=prepare_tools,
+    history_processors=[refresh_menu],      # ← per-turn refresh
+    tools=all_tools(),
+    instrument=True,
+)
+```
+
+### What changes
+
+Run the same multi-tool query again and re-inspect the Logfire trace:
+
+- Turn 1: prompt menu lists all four tools (none opened yet).
+- Turn 2: prompt menu **only lists tools the model hasn't opened yet** —
+  no redundant teaser for `get_weather` once it's been opened.
+
+The eval should still be 8/8.
+
+**What you're learning:** the second of pydantic-ai's two key hooks
+from slide 12. `prepare_tools` filters the *tool surface* per turn;
+`history_processors` rewrites the *prompt* per turn. Together they're
+how Navi keeps every model call paying only for what's currently
+relevant. Same agent, same conversation, prompt and tool list both
+shrink and grow with the model's needs.
+
+✓ **Done when**: a multi-turn run shows the closed-tools menu shrinking
+across turns in Logfire (specifically: a tool the model opened on turn
+N is no longer in the menu on turn N+1). Eval still 8/8.
+
+---
+
+## 7. Sub-agent for a sub-domain
 
 `examples/subagent.py` has an orchestrator + a spatial-analysis specialist.
 First, run it to see the current shape:
@@ -586,7 +684,7 @@ specialist. The routing rule is the whole point — make it explicit.
 
 ---
 
-## 7. Write a real eval case
+## 8. Write a real eval case
 
 Add a case to `eval.py` that the current agent **fails**. Confirm the eval
 catches it. Now fix the prompt or a tool until it passes — without breaking
@@ -641,7 +739,7 @@ one answer is 'obvious'."*
 
 ---
 
-## 8. LLM-as-judge (optional)
+## 9. LLM-as-judge (optional)
 
 Add a judge function at the bottom of `eval.py`. For one case, instead of a
 substring check, call a small LLM with a rubric and ask it to score the
@@ -685,7 +783,7 @@ the variance *is* the lesson.
 
 ---
 
-## 9. Stretch: real data via Overpass
+## 10. Stretch: real data via Overpass
 
 All the tools so far are mocks. Real Navi hits Overture Maps via DuckDB
 — too heavy for a workshop. But **Overpass** is the lightweight cousin:
