@@ -138,17 +138,65 @@ called `search_places` first.
 > Most red-baseline failures at this scale come from *missing structural
 > guidance* (chaining, grounding) rather than *missing rules of thumb*.
 > Your prompt rule for this case earns its keep because it teaches a
-> sequence, not a preference. Hold this in mind when you write Challenge 6
+> sequence, not a preference. Hold this in mind when you write Challenge 7
 > later — *the case you write* is what catches the next bug, not the
 > prompt that fixed this one.
 
 ---
 
-## 4. Convert `agent.py` to dynamic tool opening
+## 4. Add a complex tool (and feel the cost)
 
-Right now every tool's JSON schema is in the request on every turn, whether
-the model uses it or not. With four tiny tools that's nothing — but Navi has
-~20 real tools and would be burning ~10k tokens per turn on overhead.
+We've been working with four tiny tools. Real production tools aren't tiny —
+they have many parameters, nested filter/sort models, long Field descriptions,
+and Literal enums with dozens of values. Schemas like that are in the request
+**on every turn**, whether the model uses the tool or not.
+
+Open `tools/pois.py`. It's a real-shaped POI finder — a `Literal` of ~80
+categories, two nested sub-models (filters, sort), eight parameters with
+verbose descriptions. Roughly **5,600 characters of JSON schema** for one
+tool, vs ~800 chars for the four existing tools combined.
+
+It ships disabled. To activate it:
+
+1. **Uncomment the import** at the top of `tools/pois.py`:
+   ```python
+   from tools import register_tool
+   ```
+2. **Uncomment the decorator** above `find_pois`:
+   ```python
+   @register_tool
+   def find_pois(params: FindPOIsParams) -> FindPOIsResult:
+       ...
+   ```
+3. **Add the module import** in `tools/__init__.py` so the decorator runs:
+   ```python
+   from tools import demographics, elevation, places, pois, weather  # add `pois`
+   ```
+
+Run `uv run python agent.py "what's the weather in Oslo?"` and open the
+Logfire trace on the first turn. The `chat gpt-4o-mini` span shows the
+**input token count**. Compare to before — it should jump by ~1,500
+tokens (most of `find_pois`'s schema). The user's question is about
+weather; the model never calls `find_pois`. We pay for its schema anyway.
+
+Run the eval — all 7 cases should still pass. The bloat doesn't break
+correctness; it just costs tokens forever.
+
+**What you're learning:** the punchline of slide 14 made concrete. *"Tools
+cost tokens forever."* Even the tools your model never calls are in the
+schema sent to every turn. With one large tool the cost is visible; with
+20 you're shipping 10k tokens of schema before the user has even spoken.
+
+✓ **Done when**: `find_pois` is registered, the eval is still 7/7, and
+you can read the input-token jump in Logfire on a simple weather query.
+
+---
+
+## 5. Convert `agent.py` to dynamic tool opening
+
+Now you fix what Challenge 4 just demonstrated. With `find_pois` registered
+your simple weather request is paying ~1,500 tokens of schema for nothing.
+With Navi's ~20 tools the same problem multiplies to ~10k.
 
 You're going to convert `agent.py` so that closed tools are *absent* from
 the schemas the model sees. The model gets a one-line teaser of what's
@@ -157,12 +205,12 @@ available, opens the tool it wants, then calls it. The pre-shipped tools
 prompt files at `prompts/<tool>/{minimized,maximized}.md` — you just need
 to wire them up.
 
-**Write prompts for any tool you added in Challenge 2.** Your `get_elevation`
-tool needs `prompts/get_elevation/minimized.md` (one-line teaser the model
-sees in the system menu) and `prompts/get_elevation/maximized.md` (the full
-manual that gets swapped in once the tool is opened). Copy
+**Write prompts for any tool you added in Challenges 2 and 4.** Both
+`get_elevation` and `find_pois` need `prompts/<tool>/minimized.md` (one-line
+teaser the model sees in the menu) and `prompts/<tool>/maximized.md` (the
+full manual that gets swapped in once the tool is opened). Copy
 `prompts/get_weather/` as a shape and edit. Without these, the dynamic
-agent's menu will list `get_elevation` with an empty teaser.
+agent's menu lists those tools with empty teasers.
 
 **Capture the baseline first.** Run `uv run python agent.py "what's the
 weather and population in Oslo?"` and note the **input token count** on the
@@ -272,15 +320,69 @@ should be much smaller.
 You'll also want to tighten the system prompt so the model knows it has to
 call `open_tool` before using anything.
 
+### Verify with an eval — the bloat tool stays closed
+
+Now prove the savings hold. Extend `Case` in `eval.py` with a
+`forbidden_opened` field, and add a check that uses it. The whole point
+of dynamic opening is that *unrelated tools never enter the request* — so
+the eval should fail if `find_pois` gets opened for a weather question.
+
+In `eval.py`, add the field and the check:
+
+```python
+class Case(BaseModel):
+    name: str
+    prompt: str
+    expected_tools: set[str]
+    expected_in_output: list[str] = Field(default_factory=list)
+    forbidden_opened: set[str] = Field(default_factory=set)   # NEW
+
+def run_case(case: Case) -> dict:
+    deps = Deps()
+    result = agent.run_sync(case.prompt, deps=deps)
+    called = tools_used(result)
+    out_lower = result.output.lower()
+    tool_ok = case.expected_tools.issubset(called)
+    output_ok = all(s.lower() in out_lower for s in case.expected_in_output)
+    open_ok = not (deps.opened_tools & case.forbidden_opened)   # NEW
+    return {
+        "case": case.name,
+        "called": called,
+        "opened": deps.opened_tools,
+        "output": result.output[:80],
+        "tool_ok": tool_ok,
+        "output_ok": output_ok,
+        "open_ok": open_ok,                                     # NEW
+        "pass": tool_ok and output_ok and open_ok,              # NEW
+    }
+```
+
+Then add a case that exercises the assertion:
+
+```python
+Case(
+    name="weather_doesnt_open_pois",
+    prompt="What's the weather in Oslo?",
+    expected_tools={"get_weather"},
+    expected_in_output=["Oslo"],
+    forbidden_opened={"find_pois"},
+),
+```
+
+Rerun. The case should pass: the model opens `get_weather` (and maybe a
+sibling), but **not** `find_pois`. If it does open `find_pois`, your
+system prompt is too eager about opening tools — tighten it.
+
 **What you're learning:** pydantic-ai's two key hooks (`prepare_tools` for
 filtering schemas per turn, dynamic `@agent.system_prompt` for refreshing
 the prompt each run) and how Navi keeps its tool surface from blowing up
 the context. The minimized/maximized markdown files mean prompt iteration
-is a git diff, not a Python edit.
+is a git diff, not a Python edit. And evals can check what *didn't*
+happen, not just what did.
 
 ✓ **Done when**: same question's first turn uses meaningfully fewer input
-tokens (in Logfire), and the trace shows `open_tool("get_weather")` →
-`get_weather(...)` instead of all tools' schemas in the initial request.
+tokens (in Logfire), the trace shows `open_tool("get_weather")` →
+`get_weather(...)`, and `weather_doesnt_open_pois` passes (8/8 total).
 
 <details>
 <summary>📎 Full reference solution (peek if stuck)</summary>
@@ -385,7 +487,7 @@ if __name__ == "__main__":
 
 ---
 
-## 5. Sub-agent for a sub-domain
+## 6. Sub-agent for a sub-domain
 
 `examples/subagent.py` has an orchestrator + a spatial-analysis specialist.
 First, run it to see the current shape:
@@ -442,7 +544,7 @@ specialist. The routing rule is the whole point — make it explicit.
 
 ---
 
-## 6. Write a real eval case
+## 7. Write a real eval case
 
 Add a case to `eval.py` that the current agent **fails**. Confirm the eval
 catches it. Now fix the prompt or a tool until it passes — without breaking
@@ -497,7 +599,7 @@ one answer is 'obvious'."*
 
 ---
 
-## 7. LLM-as-judge (optional)
+## 8. LLM-as-judge (optional)
 
 Add a judge function at the bottom of `eval.py`. For one case, instead of a
 substring check, call a small LLM with a rubric and ask it to score the
@@ -541,7 +643,7 @@ the variance *is* the lesson.
 
 ---
 
-## 8. Stretch: real data via Overpass
+## 9. Stretch: real data via Overpass
 
 All the tools so far are mocks. Real Navi hits Overture Maps via DuckDB
 — too heavy for a workshop. But **Overpass** is the lightweight cousin:

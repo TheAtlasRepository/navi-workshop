@@ -16,7 +16,7 @@ import sys
 
 import logfire
 from dotenv import load_dotenv
-from pydantic_ai import Agent
+from pydantic_ai import Agent, RunContext
 
 from tools import get_population, get_weather, search_places
 
@@ -61,10 +61,11 @@ orchestrator = Agent(
 )
 
 
-@orchestrator.tool_plain
-async def delegate_spatial(question: str) -> str:
+@orchestrator.tool
+async def delegate_spatial(ctx: RunContext[None], question: str) -> str:
     """Hand a spatial question to the spatial-analysis specialist."""
-    result = await spatial_agent.run(question)
+    # Propagate ctx.usage so token counts roll up to the parent agent.
+    result = await spatial_agent.run(question, usage=ctx.usage)
     return result.output
 
 
