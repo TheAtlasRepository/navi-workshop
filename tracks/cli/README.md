@@ -1,7 +1,11 @@
-# The team CLI pattern
+# Track 3 — Build a starter CLI
 
-Or: why we wrapped our dev workflow in a single command surface, and why your
-team should too.
+Wrap 3–5 verbs of your daily dev loop into one command. The deck pitched the
+pattern (slide 28); now you ship a minimum viable version.
+
+> **Goal**: leave the workshop with a `mycli` (or whatever you name it) that
+> runs at least three commands and saves you keystrokes from day one. Grow it
+> at home as repetition shows you which verbs to add next.
 
 ## The problem
 
@@ -94,7 +98,3 @@ esac
 6. **Tell your agents it exists.** Put a one-line reference in `CLAUDE.md` or
    equivalent so every session knows to reach for it.
 
-## Where we are
-
-Ours has ~30 verbs and ships via Homebrew tap internally. But the first useful
-version was 10 lines. Ship the small one; let real usage shape the rest.

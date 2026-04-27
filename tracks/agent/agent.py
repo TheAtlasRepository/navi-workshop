@@ -11,7 +11,7 @@ import logfire
 from dotenv import load_dotenv
 from pydantic_ai import Agent
 
-from tools import get_population, get_weather, search_places
+from tools import all_tools
 
 load_dotenv()
 
@@ -22,7 +22,7 @@ MODEL = os.getenv("NAVI_MODEL", "openai:gpt-4o-mini")
 
 SYSTEM_PROMPT = """You are Mini-Navi, a GIS assistant.
 
-You help users answer spatial questions about places, weather, and demographics.
+You help users answer spatial questions about places, weather, demographics, and elevation.
 
 Rules:
 - Prefer tools over guessing. If a user asks about a place's weather, call get_weather.
@@ -31,11 +31,12 @@ Rules:
 - If a tool returns nothing useful, say so plainly. Don't hallucinate data.
 """
 
-agent = Agent(MODEL, system_prompt=SYSTEM_PROMPT, instrument=True)
-
-agent.tool_plain(search_places)
-agent.tool_plain(get_weather)
-agent.tool_plain(get_population)
+agent = Agent(
+    MODEL,
+    system_prompt=SYSTEM_PROMPT,
+    tools=all_tools(),
+    instrument=True,
+)
 
 
 def main() -> None:

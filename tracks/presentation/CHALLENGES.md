@@ -4,11 +4,11 @@ A ladder for the presentation track. Do them in order. Each builds on the last.
 
 ---
 
-## 1. Make it yours (15 min)
+## 1. Make it yours
 
 Open `index.html` in a browser. Walk through all 8 slides. Now:
 
-- Pick a topic you could talk about for 5 minutes (your team's stack, a recent project, a bug you fixed).
+- Pick a topic you could talk about briefly (your team's stack, a recent project, a bug you fixed).
 - Replace the title slide's `<h1>` with your topic.
 - Replace `Your Logo.` with your name or a placeholder text.
 - Replace `yourcompany.com` in the footers.
@@ -18,7 +18,7 @@ Open `index.html` in a browser. Walk through all 8 slides. Now:
 
 ---
 
-## 2. Write three slides by hand (30 min)
+## 2. Write three slides by hand
 
 Without using an AI, write slides 2, 3, and 4 about your topic. Pick any of the existing layouts. Rules:
 
@@ -30,7 +30,7 @@ Without using an AI, write slides 2, 3, and 4 about your topic. Pick any of the 
 
 ---
 
-## 3. Let Claude draft five more (30 min)
+## 3. Let Claude draft five more
 
 In Claude Code, point it at your file and ask something like:
 
@@ -42,7 +42,7 @@ Review each slide it writes. Reject the weak ones. Rewrite the ones you don't li
 
 ---
 
-## 4. Add a real image (15 min)
+## 4. Add a real image
 
 Pick one two-col slide. Put a real image in `assets/`. Replace the placeholder with:
 
@@ -58,7 +58,7 @@ Do the image and the words on that slide reinforce each other? If not, change on
 
 ---
 
-## 5. Retheme (30 min)
+## 5. Retheme
 
 Change the CSS palette. Pick a new primary color (your company's, a favorite movie's, whatever). Update the `:root` variables. Reload.
 
@@ -68,7 +68,7 @@ Everything should retheme consistently because every visual element uses a CSS v
 
 ---
 
-## 6. Ship it (15 min)
+## 6. Ship it
 
 Deploy to GitHub Pages or Vercel. Share the URL with someone in the room. Have them navigate on their phone.
 

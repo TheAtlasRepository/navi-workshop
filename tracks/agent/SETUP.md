@@ -1,6 +1,6 @@
 # Setup
 
-Do this before the workshop. Takes 5–10 minutes.
+Do this before the workshop.
 
 ## 1. OpenAI API key
 
@@ -20,14 +20,7 @@ Half the workshop is about reading traces. Without Logfire the code still runs �
 2. Create a new project. Any name.
 3. **Write tokens** → create one. Copy it.
 
-## 3. Anthropic (only if you want Claude)
-
-Skip unless you want to swap models.
-
-1. [console.anthropic.com](https://console.anthropic.com) → sign up → API Keys → Create Key.
-2. In `.env`, set `ANTHROPIC_API_KEY=...` and change `NAVI_MODEL=anthropic:claude-sonnet-4-5`.
-
-## 4. Tooling
+## 3. Tooling
 
 ```bash
 # Python 3.11+ — check with:
@@ -43,12 +36,12 @@ uv --version
 
 If you already use pip/poetry/pdm those will work too — `uv` is just what the commands in README.md assume.
 
-## 5. Git + editor
+## 4. Git + editor
 
 - Git. You already have it.
-- An editor with **[Claude Code](https://claude.ai/code)** installed (or Cursor, or whichever AI-first editor you prefer). The afternoon practical uses Claude Code for the worktree demo.
+- An editor with **[Claude Code](https://claude.ai/code)** installed (or Cursor, or whichever AI-first editor you prefer). The afternoon practical uses it for the hands-on tracks.
 
-## 6. Wire it up
+## 5. Wire it up
 
 ```bash
 cd navi-workshop
@@ -70,7 +63,7 @@ uv run python server.py
 
 Open [http://localhost:8000](http://localhost:8000). Click one of the example prompts. You should see a chat response with expandable tool-call cards.
 
-## 7. Presentation track (no keys needed)
+## 6. Presentation track (no keys needed)
 
 If you're doing the presentation track instead: just open `presentation-starter/index.html` in a browser. That's the whole setup.
 

@@ -34,9 +34,12 @@ You answer questions that require combining a place with its surroundings:
 'how many people live near Y', 'what parks are close to Z'. Use search_places
 and get_population. Keep the answer to one sentence."""
 
-spatial_agent = Agent(MODEL, system_prompt=SPATIAL_PROMPT, instrument=True)
-spatial_agent.tool_plain(search_places)
-spatial_agent.tool_plain(get_population)
+spatial_agent = Agent(
+    MODEL,
+    system_prompt=SPATIAL_PROMPT,
+    tools=[search_places, get_population],
+    instrument=True,
+)
 
 
 # ---- Orchestrator -----------------------------------------------------------
@@ -50,12 +53,17 @@ Route, don't answer. You have two tools:
 
 After a tool call you may respond directly to the user."""
 
-orchestrator = Agent(MODEL, system_prompt=ORCHESTRATOR_PROMPT, instrument=True)
-orchestrator.tool_plain(get_weather)
+orchestrator = Agent(
+    MODEL,
+    system_prompt=ORCHESTRATOR_PROMPT,
+    tools=[get_weather],
+    instrument=True,
+)
 
 
 @orchestrator.tool_plain
 async def delegate_spatial(question: str) -> str:
+    """Hand a spatial question to the spatial-analysis specialist."""
     result = await spatial_agent.run(question)
     return result.output
 
