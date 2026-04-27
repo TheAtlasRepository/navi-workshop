@@ -179,16 +179,35 @@ Logfire trace on the first turn. The `chat gpt-4o-mini` span shows the
 tokens (most of `find_pois`'s schema). The user's question is about
 weather; the model never calls `find_pois`. We pay for its schema anyway.
 
-Run the eval — all 7 cases should still pass. The bloat doesn't break
-correctness; it just costs tokens forever.
+Now run the eval. **Surprise**: it likely drops from 7/7 to 5/7. Look
+at which cases fail and what tools they called — you'll see the model
+picking `find_pois` for "what parks are in Oslo?" instead of
+`search_places`. The Literal enum includes `park`, and `find_pois`'s
+verbose description sounds more authoritative than `search_places`'s.
+**Adding one tool changed the behavior of two unrelated cases.**
 
-**What you're learning:** the punchline of slide 14 made concrete. *"Tools
-cost tokens forever."* Even the tools your model never calls are in the
-schema sent to every turn. With one large tool the cost is visible; with
-20 you're shipping 10k tokens of schema before the user has even spoken.
+Fix it by clarifying when to use which tool. Edit `find_pois`'s docstring
+to defer to `search_places` for general queries — e.g.:
 
-✓ **Done when**: `find_pois` is registered, the eval is still 7/7, and
-you can read the input-token jump in Logfire on a simple weather query.
+```python
+@register_tool
+def find_pois(params: FindPOIsParams) -> FindPOIsResult:
+    """Find specific commercial POI categories (cafe, restaurant, pharmacy,
+    bank, etc.) in a city. For general place searches like parks or
+    landmarks, prefer `search_places`."""
+    ...
+```
+
+Rerun the eval. Should be back to 7/7.
+
+**What you're learning:** two costs of adding a tool, both real:
+1. *Tokens forever* — even idle, every tool's schema rides every request.
+2. *Behavior shift* — verbose descriptions compete; a new tool can pull
+   the model away from existing ones. Tool descriptions are prompts.
+
+✓ **Done when**: `find_pois` is registered, the eval went 7/7 → 5/7 →
+7/7 (you saw the regression and fixed it), and you can read the
+input-token jump in Logfire on a simple weather query.
 
 ---
 
