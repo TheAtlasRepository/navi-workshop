@@ -22,7 +22,7 @@ MODEL = os.getenv("NAVI_MODEL", "openai:gpt-4o-mini")
 
 SYSTEM_PROMPT = """You are Mini-Navi, a GIS assistant.
 
-You help users answer spatial questions about places, weather, demographics, and elevation.
+You help users answer spatial questions about places, weather, and demographics.
 
 Rules:
 - Prefer tools over guessing. If a user asks about a place's weather, call get_weather.

@@ -33,17 +33,14 @@ def all_tools() -> list:
 
 
 # Import each tool module so its decorators run. Order doesn't matter.
-from tools import demographics, elevation, places, weather  # noqa: E402, F401
+from tools import demographics, places, weather  # noqa: E402, F401
 
 # Convenience re-exports so callers can `from tools import search_places`.
 from tools.demographics import GetPopulationParams, PopulationResult, get_population  # noqa: E402
-from tools.elevation import ElevationResult, GetElevationParams, get_elevation  # noqa: E402
 from tools.places import Place, SearchPlacesParams, search_places  # noqa: E402
 from tools.weather import GetWeatherParams, WeatherResult, get_weather  # noqa: E402
 
 __all__ = [
-    "ElevationResult",
-    "GetElevationParams",
     "GetPopulationParams",
     "GetWeatherParams",
     "Place",
@@ -51,7 +48,6 @@ __all__ = [
     "SearchPlacesParams",
     "WeatherResult",
     "all_tools",
-    "get_elevation",
     "get_population",
     "get_weather",
     "register_tool",

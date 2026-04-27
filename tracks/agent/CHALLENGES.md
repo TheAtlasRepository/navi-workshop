@@ -28,22 +28,25 @@ near the other tool-module imports) so the decorator runs at import time.
 Optionally also re-export your function and models alongside the others.
 
 Ask the app *"what's the elevation of Mount Everest?"* and watch the Logfire
-trace.
+trace. Then run `uv run python eval.py` — you should see one of the two
+red elevation cases turn green (`prefers_tool_over_training`).
 
 **What you're learning:** the tool-call loop, Pydantic AI's BaseModel
 pattern, and the simplest registration pattern (decorator + collector). The
 model picks a tool, pydantic-ai validates the args into your model, you run,
 you return a model, it goes back as JSON, the model answers.
 
-✓ **Done when**: the app answers the Everest question with a number, and
-Logfire shows a `get_elevation` span in the trace.
+✓ **Done when**: the app answers the Everest question with a number,
+Logfire shows a `get_elevation` span in the trace, and the eval has gone
+from **5/7 → 6/7** (the chain case still fails — that's Challenge 2).
 
 ---
 
 ## 2. Fix the system prompt
 
-Run `uv run python eval.py`. **6/7 pass; one fails:** `chain_landmark_elevation`.
-Open the Logfire trace on that case and look at what the model actually did.
+After Challenge 1 the eval should be **6/7**, with `chain_landmark_elevation`
+still failing. Open the Logfire trace on that case and look at what the
+model actually did.
 
 You'll see the model called `get_elevation` directly on a landmark name it
 picked from training (something like "Holmenkollen Ski Jump") — never
@@ -194,6 +197,19 @@ should be much smaller.
        print(result.output)
    ```
 
+8. **Update the callers** (`eval.py` and `server.py`). The agent's shape
+   changed — anyone calling `agent.run` or `agent.run_sync` needs to pass
+   `deps=Deps()`, otherwise the dynamic `@agent.system_prompt` crashes on
+   `ctx.deps.opened_tools`. In each file:
+   ```python
+   from agent import Deps, agent      # add Deps to the import
+   ...
+   result = agent.run_sync(prompt, deps=Deps())   # was: agent.run_sync(prompt)
+   ```
+   This is a real teaching moment: when you change the agent's shape, the
+   callers need updates too. Forgetting this is the single most common bug
+   in the conversion.
+
 You'll also want to tighten the system prompt so the model knows it has to
 call `open_tool` before using anything.
 
@@ -316,7 +332,7 @@ if __name__ == "__main__":
 First, run it to see the current shape:
 
 ```bash
-uv run python examples/subagent.py "How many people live near Central Park?"
+uv run python -m examples.subagent "How many people live near Central Park?"
 ```
 
 Open the Logfire trace — you'll see the orchestrator span with a nested
@@ -336,8 +352,8 @@ in Logfire for the demographics agent, and a weather question does *not*
 touch either specialist. Verify with:
 
 ```bash
-uv run python examples/subagent.py "How many people live in Bergen?"
-uv run python examples/subagent.py "What's the weather in Oslo?"
+uv run python -m examples.subagent "How many people live in Bergen?"
+uv run python -m examples.subagent "What's the weather in Oslo?"
 ```
 
 <details>
