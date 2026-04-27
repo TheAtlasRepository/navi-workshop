@@ -174,10 +174,15 @@ It ships disabled. To activate it:
    ```
 
 Run `uv run python agent.py "what's the weather in Oslo?"` and open the
-Logfire trace on the first turn. The `chat gpt-4o-mini` span shows the
-**input token count**. Compare to before — it should jump by ~1,500
-tokens (most of `find_pois`'s schema). The user's question is about
-weather; the model never calls `find_pois`. We pay for its schema anyway.
+Logfire trace on the first turn. Click the `chat gpt-4o-mini` span and
+look at the **Model Run** tab on the right — you'll see input tokens,
+output tokens, and the **Tools available** list. Five tools, ~1,665
+input tokens for a *weather* question:
+
+![Logfire — static agent, 5 tools, 1665 input tokens](assets/logfire-static-5tools.png)
+
+The user's question is about weather; the model never calls `find_pois`.
+We pay for its schema anyway.
 
 Now run the eval. **Surprise**: it likely drops from 7/7 to 5/7. Look
 at which cases fail and what tools they called — you'll see the model
@@ -338,6 +343,24 @@ should be much smaller.
 
 You'll also want to tighten the system prompt so the model knows it has to
 call `open_tool` before using anything.
+
+### What to look for in Logfire after conversion
+
+Run the same weather query you used in Challenge 4. Click the **first**
+`chat gpt-4o-mini` span — Tools available is now just `open_tool`, input
+tokens drop from ~1,665 to ~459:
+
+![Logfire — dynamic agent, turn 1, only open_tool](assets/logfire-dynamic-turn1.png)
+
+The model calls `open_tool("get_weather")`. Then look at the **next**
+`chat gpt-4o-mini` span — now Tools available is `open_tool` + `get_weather`,
+input is still well below the static baseline (~816 tokens):
+
+![Logfire — dynamic agent, turn 2, get_weather opened](assets/logfire-dynamic-turn2.png)
+
+Even at turn 2, with `get_weather` fully present, the request is half the
+size of the static baseline because the other ~80 categories of `find_pois`
+never enter the conversation.
 
 ### Verify with an eval — the bloat tool stays closed
 

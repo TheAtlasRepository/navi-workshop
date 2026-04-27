@@ -44,7 +44,7 @@ If you already use pip/poetry/pdm those will work too — `uv` is just what the 
 ## 5. Wire it up
 
 ```bash
-cd navi-workshop
+cd navi-workshop/tracks/agent
 cp .env.example .env
 # paste your keys into .env
 uv sync
@@ -65,7 +65,34 @@ Open [http://localhost:8000](http://localhost:8000). Click one of the example pr
 
 ## 6. Presentation track (no keys needed)
 
-If you're doing the presentation track instead: just open `presentation-starter/index.html` in a browser. That's the whole setup.
+If you're doing the presentation track instead: just open `tracks/presentation/index.html` in a browser. That's the whole setup.
+
+---
+
+## Optional: see model reasoning in Logfire
+
+Default `openai:gpt-4o-mini` is fast and cheap but doesn't emit reasoning tokens — Logfire's "thinking" content will be empty. If you want to see the model's chain-of-thought in the trace (great for understanding why it chose a tool), switch to a reasoning model and turn thinking on:
+
+```python
+# in agent.py — instead of agent = Agent(MODEL, ...)
+from pydantic_ai.settings import ModelSettings
+
+agent = Agent(
+    MODEL,
+    system_prompt=SYSTEM_PROMPT,
+    tools=all_tools(),
+    model_settings=ModelSettings(thinking=True),  # or 'low' / 'medium' / 'high'
+    instrument=True,
+)
+```
+
+Then point `NAVI_MODEL` at a reasoning model in `.env`:
+
+```bash
+NAVI_MODEL=openai:gpt-5-mini   # or openai:gpt-5
+```
+
+Cost is meaningfully higher than `gpt-4o-mini` — use it for inspection, then switch back for the eval loops.
 
 ---
 
