@@ -7,6 +7,11 @@ pattern (slide 28); now you ship a minimum viable version.
 > runs at least three commands and saves you keystrokes from day one. Grow it
 > at home as repetition shows you which verbs to add next.
 
+**Start here**: `CHALLENGES.md` walks you through it step by step (pick verbs
+→ write the bash router → add to PATH → make Claude Code aware → optional
+tab completion / Python rewrite). The rest of *this* file is the *why* — read
+it once, then go work the challenges.
+
 ## The problem
 
 Every team has ~20 workflows people run daily: bring up the dev stack, SSH to
