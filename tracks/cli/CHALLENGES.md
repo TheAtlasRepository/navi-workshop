@@ -253,6 +253,70 @@ type-checked args, real error messages.
 
 ---
 
+## 9. Stretch — graduate to TypeScript with Bun (optional)
+
+If your team is more JS/TS than Python, [`bun`](https://bun.sh) is the
+shortest path. Bun runs TypeScript directly (no build step) and ships its
+own shell helper. Atlas's real `atlas` CLI is built this way.
+
+Install bun once:
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+bun --version
+```
+
+Then a single TypeScript file with a shebang:
+
+```typescript
+#!/usr/bin/env bun
+// ~/bin/mycli — chmod +x, still in PATH
+import { $ } from "bun";
+
+const [, , cmd, ...rest] = process.argv;
+
+switch (cmd) {
+  case "up":
+    await $`docker compose up -d`;
+    break;
+  case "down":
+    await $`docker compose down`;
+    break;
+  case "logs":
+    await $`docker compose logs -f ${rest}`;
+    break;
+  case "wtt": {
+    const name = rest[0];
+    if (!name) {
+      console.error("usage: mycli wtt <name>");
+      process.exit(1);
+    }
+    await $`git worktree add -b feat/${name} ../wt/${name}`;
+    break;
+  }
+  default:
+    console.log(`mycli — your team workflow CLI
+
+  up           docker compose up
+  down         docker compose down
+  logs <svc>   tail one service
+  wtt <name>   create worktree + branch
+`);
+}
+```
+
+`Bun.$` is a tagged-template shell — variables are escaped, no `child_process`
+ceremony. For richer help and subcommand parsing, add
+[`commander`](https://github.com/tj/commander.js) (`bun add commander` in a
+`~/bin/mycli-pkg/` folder, or use `bun install -g commander` for global).
+For full structure (Atlas's pattern), [`oclif`](https://oclif.io) gives you
+auto-discovered commands in a directory tree.
+
+✓ **Done when**: at least one verb runs through bun and `mycli` (no args)
+prints help.
+
+---
+
 ## What you take home
 
 A CLI you actually use. The compounding starts at verb #5 — every new verb
