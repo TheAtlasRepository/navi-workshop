@@ -12,13 +12,38 @@ Create these accounts. See `SETUP.md` for step-by-step.
 
 1. **OpenAI API key** — we use `gpt-4o-mini`, low single-digit-dollar cost.
 2. **Logfire account + write token** — optional but strongly recommended.
-3. **uv** installed + Python 3.11+.
+3. **Python 3.11+** and **uv** installed (next section).
+
+## Install uv
+
+[uv](https://docs.astral.sh/uv/) is the fastest Python package manager and what
+the commands below assume. Install once:
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# or with Homebrew
+brew install uv
+
+# verify
+uv --version
+```
+
+If `uv: command not found` after install, restart your shell — uv adds itself
+to `~/.local/bin` (or `~/.cargo/bin`).
+
+If you already use pip / poetry / pdm those work too — `uv` is just the
+default in this README.
 
 ## Setup
 
 ```bash
 cd tracks/agent
-uv sync            # or: python -m venv .venv && .venv/bin/pip install -e .
+uv sync                                            # creates .venv, installs deps
 cp .env.example .env
 # add your OPENAI_API_KEY. LOGFIRE_TOKEN is optional but recommended.
 

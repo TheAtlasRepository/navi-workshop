@@ -22,15 +22,18 @@ Half the workshop is about reading traces. Without Logfire the code still runs �
 
 ## 3. Tooling
 
+Python 3.11+ and [uv](https://docs.astral.sh/uv/) (the fastest Python package manager).
+
 ```bash
 # Python 3.11+ — check with:
 python3 --version
 
-# uv (fastest Python package manager):
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# restart your shell or: source ~/.zshrc
+# install uv — pick one:
+curl -LsSf https://astral.sh/uv/install.sh | sh                                       # macOS / Linux
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"    # Windows
+brew install uv                                                                       # Homebrew
 
-# verify
+# restart your shell (or: source ~/.zshrc) so PATH picks up uv
 uv --version
 ```
 
